@@ -117,7 +117,7 @@ class DDIMSamplerWithGrad(object):
             sqrt_one_minus_at = torch.full((b, 1, 1, 1), sqrt_one_minus_alphas[index], device=device)
 
             beta_t = a_t / a_prev
-            num_steps = operation.num_steps[0]
+            num_steps = operation.num_steps
 
             operation_func = operation.operation_func
             other_guidance_func = operation.other_guidance_func
@@ -135,14 +135,14 @@ class DDIMSamplerWithGrad(object):
                         x_in = torch.cat([img_in] * 2)
                         t_in = torch.cat([ts] * 2)
                         c_in = torch.cat([unconditional_conditioning, cond])
-                        e_t_uncond, e_t = self.model.module.apply_model(x_in, t_in, c_in).chunk(2)
+                        e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
                         e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
                         # del x_in
                     else:
-                        e_t = self.model.module.apply_model(img_in, ts, cond)
+                        e_t = self.model.apply_model(img_in, ts, cond)
 
                     pred_x0 = (img_in - sqrt_one_minus_at * e_t) / a_t.sqrt()
-                    recons_image = self.model.module.decode_first_stage_with_grad(pred_x0)
+                    recons_image = self.model.decode_first_stage_with_grad(pred_x0)
 
                     if other_guidance_func != None:
                         op_im = other_guidance_func(recons_image)
@@ -199,10 +199,10 @@ class DDIMSamplerWithGrad(object):
                         x_in = torch.cat([img] * 2)
                         t_in = torch.cat([ts] * 2)
                         c_in = torch.cat([unconditional_conditioning, cond])
-                        e_t_uncond, e_t = self.model.module.apply_model(x_in, t_in, c_in).chunk(2)
+                        e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
                         e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
                     else:
-                        e_t = self.model.module.apply_model(img, ts, cond)
+                        e_t = self.model.apply_model(img, ts, cond)
 
                 with torch.no_grad():
                     # current prediction for x_0
@@ -245,7 +245,7 @@ class DDIMSamplerWithGrad(object):
         cond = conditioning
 
 
-        device = self.model.module.betas.device
+        device = self.model.betas.device
         b = shape[0]
 
         img = torch.randn(shape, device=device)
@@ -261,7 +261,7 @@ class DDIMSamplerWithGrad(object):
         sqrt_one_minus_alphas = self.ddim_sqrt_one_minus_alphas
         sigmas = self.ddim_sigmas
 
-        for param in self.model.module.first_stage_model.parameters():
+        for param in self.model.first_stage_model.parameters():
             param.requires_grad = False
 
 
@@ -306,14 +306,14 @@ class DDIMSamplerWithGrad(object):
                         x_in = torch.cat([img_in] * 2)
                         t_in = torch.cat([ts] * 2)
                         c_in = torch.cat([unconditional_conditioning, cond])
-                        e_t_uncond, e_t_cond = self.model.module.apply_model(x_in, t_in, c_in).chunk(2)
+                        e_t_uncond, e_t_cond = self.model.apply_model(x_in, t_in, c_in).chunk(2)
                         e_t = e_t_uncond # + unconditional_guidance_scale * (e_t - e_t_uncond)
                         # del x_in
                     else:
-                        e_t = self.model.module.apply_model(img_in, ts, cond)
+                        e_t = self.model.apply_model(img_in, ts, cond)
 
                     pred_x0 = (img_in - sqrt_one_minus_at * e_t) / a_t.sqrt()
-                    recons_image = self.model.module.decode_first_stage_with_grad(pred_x0)
+                    recons_image = self.model.decode_first_stage_with_grad(pred_x0)
 
                     if other_guidance_func != None:
                         op_im = other_guidance_func(recons_image)
@@ -371,10 +371,10 @@ class DDIMSamplerWithGrad(object):
                         x_in = torch.cat([img] * 2)
                         t_in = torch.cat([ts] * 2)
                         c_in = torch.cat([unconditional_conditioning, cond])
-                        e_t_uncond, e_t = self.model.module.apply_model(x_in, t_in, c_in).chunk(2)
+                        e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
                         e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
                     else:
-                        e_t = self.model.module.apply_model(img, ts, cond)
+                        e_t = self.model.apply_model(img, ts, cond)
 
                 with torch.no_grad():
                     # current prediction for x_0
@@ -401,7 +401,7 @@ class DDIMSamplerWithGrad(object):
                       mask=None, x0=None, img_callback=None, log_every_t=100,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
                       unconditional_guidance_scale=1., unconditional_conditioning=None,):
-        device = self.model.module.betas.device
+        device = self.model.betas.device
         b = shape[0]
 
         img = torch.randn(shape, device=device)
@@ -417,7 +417,7 @@ class DDIMSamplerWithGrad(object):
         sqrt_one_minus_alphas = self.ddim_sqrt_one_minus_alphas
         sigmas = self.ddim_sigmas
 
-        for param in self.model.module.first_stage_model.parameters():
+        for param in self.model.first_stage_model.parameters():
             param.requires_grad = False
 
         for i, step in enumerate(iterator):
@@ -453,14 +453,14 @@ class DDIMSamplerWithGrad(object):
                     x_in = torch.cat([img_in] * 2)
                     t_in = torch.cat([ts] * 2)
                     c_in = torch.cat([unconditional_conditioning, cond])
-                    e_t_uncond, e_t = self.model.module.apply_model(x_in, t_in, c_in).chunk(2)
+                    e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
                     e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
                     # del x_in
                 else:
-                    e_t = self.model.module.apply_model(img_in, ts, cond)
+                    e_t = self.model.apply_model(img_in, ts, cond)
 
                 pred_x0 = (img_in - sqrt_one_minus_at * e_t) / a_t.sqrt()
-                recons_image = self.model.module.decode_first_stage_with_grad(pred_x0)
+                recons_image = self.model.decode_first_stage_with_grad(pred_x0)
 
 
                 if other_guidance_func != None:
@@ -503,10 +503,10 @@ class DDIMSamplerWithGrad(object):
                     x_in = torch.cat([img] * 2)
                     t_in = torch.cat([ts] * 2)
                     c_in = torch.cat([unconditional_conditioning, cond])
-                    e_t_uncond, e_t = self.model.module.apply_model(x_in, t_in, c_in).chunk(2)
+                    e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
                     e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
                 else:
-                    e_t = self.model.module.apply_model(img, ts, cond)
+                    e_t = self.model.apply_model(img, ts, cond)
 
             with torch.no_grad():
             # current prediction for x_0
