@@ -26,14 +26,14 @@ class DDIMSamplerWithGrad(object):
     def make_schedule(self, ddim_num_steps, ddim_discretize="uniform", ddim_eta=0., verbose=True):
 
         self.ddim_timesteps = make_ddim_timesteps(ddim_discr_method=ddim_discretize, num_ddim_timesteps=ddim_num_steps,
-                                                  num_ddpm_timesteps=self.model.module.num_timesteps, verbose=verbose)
+                                                  num_ddpm_timesteps=self.model.num_timesteps, verbose=verbose)
 
-        alphas_cumprod = self.model.module.alphas_cumprod
-        to_torch = lambda x: x.clone().detach().to(torch.float32).to(self.model.module.device)
+        alphas_cumprod = self.model.alphas_cumprod
+        to_torch = lambda x: x.clone().detach().to(torch.float32).to(self.model.device)
 
-        self.register_buffer('betas', to_torch(self.model.module.betas))
+        self.register_buffer('betas', to_torch(self.model.betas))
         self.register_buffer('alphas_cumprod', to_torch(alphas_cumprod))
-        self.register_buffer('alphas_cumprod_prev', to_torch(self.model.module.alphas_cumprod_prev))
+        self.register_buffer('alphas_cumprod_prev', to_torch(self.model.alphas_cumprod_prev))
 
         # calculations for diffusion q(x_t | x_{t-1}) and others
         self.register_buffer('sqrt_alphas_cumprod', to_torch(np.sqrt(alphas_cumprod.cpu())))
@@ -79,7 +79,7 @@ class DDIMSamplerWithGrad(object):
         cond = conditioning
 
 
-        device = self.model.module.betas.device
+        device = self.model.betas.device
         b = shape[0]
 
         if start_zt is None:
@@ -99,7 +99,7 @@ class DDIMSamplerWithGrad(object):
         sqrt_one_minus_alphas = self.ddim_sqrt_one_minus_alphas
         sigmas = self.ddim_sigmas
 
-        for param in self.model.module.first_stage_model.parameters():
+        for param in self.model.first_stage_model.parameters():
             param.requires_grad = False
 
 
